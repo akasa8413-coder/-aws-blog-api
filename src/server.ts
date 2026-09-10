@@ -1,22 +1,7 @@
-import express from "express";
+import app from "./app.js";
 
-const app = express();
+const PORT = 3000;
 
-app.get("/", (req, res) => {
-    res.send("Hello Express");
-});
-
-app.get("/hello", (req, res) => {
-    res.send("Hello API");
-});
-
-app.get("/user", (req, res) => {
-    res.json({
-        name: "sakyo",
-        age: 20
-    });
-});
-
-app.listen(3000, () => {
-    console.log("Server Started");
+app.listen(PORT, () => {
+    console.log(`Server started on http://localhost:${PORT}`);
 });
