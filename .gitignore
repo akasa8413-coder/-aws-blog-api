@@ -3,4 +3,4 @@ dist/
 .env
 .DS_Store
 npm-debug.log*
-/generated/prisma
+/src/generated/prisma
