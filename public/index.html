@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#234b3c">
+  <meta name="description" content="日々の学びと、小さな気づき。つくる日々を書き残すブログ、余白。">
+  <title>余白 — つくる日々の記録</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/style.css">
+  <script type="module" src="/assets/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">本文へ移動</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#/" aria-label="余白 ホーム"><span class="brand-mark" aria-hidden="true">余</span><span class="brand-name">余白<span class="brand-en">YOHAKU JOURNAL</span></span></a>
+      <nav aria-label="メインナビゲーション"><a href="#/" data-nav="journal">記事を読む</a><a href="#/studio" data-nav="studio">自分の記事</a></nav>
+      <div id="account-actions" class="header-actions"></div>
+    </div>
+  </header>
+  <main id="main" tabindex="-1"></main>
+  <footer class="site-footer"><a class="footer-brand" href="#/">余白 <span>YOHAKU</span></a><p>学ぶこと、つくること。そのあいだにある記録。</p><span class="footer-note">A LITTLE SPACE FOR YOUR THOUGHTS.</span></footer>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="auth-dialog" aria-labelledby="auth-title">
+    <button class="close-button" type="button" data-action="close-auth" aria-label="閉じる">×</button>
+    <span class="eyebrow">YOUR OWN LITTLE SPACE</span>
+    <h2 id="auth-title">おかえりなさい。</h2>
+    <p id="auth-description" class="muted">続きを、ここから。</p>
+    <form id="auth-form">
+      <label id="name-field" hidden>お名前<input name="name" autocomplete="name" maxlength="100"></label>
+      <label>メールアドレス<input name="email" type="email" autocomplete="username" maxlength="254" placeholder="you@example.com" required></label>
+      <label>パスワード<input name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required aria-describedby="password-help"></label>
+      <p id="password-help" class="field-help">12文字以上、128バイト以内で入力してください。</p>
+      <p class="form-error" id="auth-error" role="alert" hidden></p>
+      <button class="button primary full" id="auth-submit" type="submit">ログイン</button>
+    </form>
+    <p class="dialog-switch"><span id="auth-switch-label">はじめての方は</span> <button class="text-button" type="button" data-action="switch-auth">アカウントを作成</button></p>
+    <p class="field-help session-note">この画面を再読み込みすると、再ログインが必要です。</p>
+  </dialog>
+  <dialog id="editor-dialog" class="editor-dialog" aria-labelledby="editor-title">
+    <button class="close-button" type="button" data-action="close-editor" aria-label="閉じる">×</button>
+    <span class="eyebrow">WRITE YOUR NEXT CHAPTER</span><h2 id="editor-title">新しい記事を書く</h2>
+    <form id="editor-form">
+      <label>タイトル<input name="title" placeholder="今日、書き残しておきたいこと" maxlength="200" required></label>
+      <label>本文<textarea name="content" rows="12" placeholder="小さな気づきから、書き始めてみましょう。" maxlength="25000" required></textarea></label>
+      <div class="editor-bottom"><p class="field-help" id="character-count">0文字</p><label class="checkbox-label"><input name="published" type="checkbox">公開する</label></div>
+      <p class="field-help">チェックを外して保存すると、自分だけが見られる下書きになります。本文はプレーンテキストです。</p>
+      <p class="form-error" id="editor-error" role="alert" hidden></p>
+      <div class="dialog-buttons"><button class="button secondary" type="button" data-action="close-editor">キャンセル</button><button class="button primary" id="editor-submit" type="submit">保存する</button></div>
+    </form>
+  </dialog>
+  <dialog id="delete-dialog" aria-labelledby="delete-title">
+    <span class="eyebrow">DELETE ARTICLE</span><h2 id="delete-title">この記事を削除しますか？</h2><p class="muted">削除した記事は元に戻せません。</p><p class="delete-name" id="delete-name"></p>
+    <p class="form-error" id="delete-error" role="alert" hidden></p>
+    <div class="dialog-buttons"><button class="button secondary" type="button" data-action="close-delete">残しておく</button><button class="button danger" id="delete-submit" type="button" data-action="confirm-delete">削除する</button></div>
+  </dialog>
+  <noscript><p class="noscript">このブログの表示にはJavaScriptを有効にしてください。</p></noscript>
+</body>
+</html>

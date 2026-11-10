@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { requireAuth } from '../middleware/auth.js';
 import { prisma } from '../lib/prisma.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { hashPassword, verifyPassword } from '../lib/password.js';
@@ -14,6 +15,14 @@ function credentials(body: unknown): { email: string; password: string } | null 
         typeof password !== 'string' || password.length < 12 || Buffer.byteLength(password) > 128) return null;
     return { email: email.trim().toLowerCase(), password };
 }
+router.get('/me', requireAuth, async (req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    try {
+        const user = await prisma.user.findUnique({ where: { id: res.locals.userId }, select: publicUser });
+        if (!user) { res.status(401).json({ message: 'Authentication required' }); return; }
+        res.json({ user });
+    } catch (error) { next(error); }
+});
 // Bound costly password work within this process. Use a shared limiter when deploying multiple replicas.
 let active = 0;
 let budget = 30;
