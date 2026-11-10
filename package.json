@@ -7,7 +7,11 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "test": "node --import tsx --test tests/security.test.ts",
+    "test:integration": "node --import tsx --test tests/integration.test.ts",
+    "db:generate": "prisma generate --config prisma7.config.ts",
+    "db:migrate": "prisma migrate deploy --config prisma7.config.ts"
   },
   "keywords": [
     "typescript",
@@ -29,6 +33,7 @@
     "@prisma/client": "^7.10.0",
     "dotenv": "^18.0.5",
     "express": "^5.2.1",
+    "jose": "^6.2.17",
     "pg": "^8.23.1",
     "prisma": "^7.10.0"
   }

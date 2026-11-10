@@ -1,11 +1,15 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 
+import { requireAuth } from "../middleware/auth.js";
+
 const router = Router();
+// Keep existing response fields stable; authorId is managed by the server.
+const postFields = { id: true, title: true, content: true, published: true, createdAt: true, updatedAt: true } as const;
 
 router.get("/", async (req, res) => {
     try {
-        const posts = await prisma.post.findMany();
+        const posts = await prisma.post.findMany({ select: postFields });
 
         return res.json(posts);
     } catch (error) {
@@ -21,13 +25,14 @@ router.get("/:id", async (req, res) => {
     try {
         const id = Number(req.params.id);
 
-        if (!Number.isInteger(id) || id <= 0) {
+        if (!Number.isSafeInteger(id) || id <= 0 || id > 2147483647) {
             return res.status(400).json({
                 message: "Invalid post id"
             });
         }
 
         const post = await prisma.post.findUnique({
+            select: postFields,
             where: {
                 id
             }
@@ -49,17 +54,17 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", requireAuth, async (req, res) => {
     try {
         const id = Number(req.params.id);
 
-        if (!Number.isInteger(id) || id <= 0) {
+        if (!Number.isSafeInteger(id) || id <= 0 || id > 2147483647) {
             return res.status(400).json({
                 message: "Invalid post id"
             });
         }
 
-        const { title, content, published } = req.body;
+        const { title, content, published } = req.body ?? {};
 
         if (
             title === undefined &&
@@ -107,8 +112,14 @@ router.patch("/:id", async (req, res) => {
             });
         }
 
+        if (existingPost.authorId !== res.locals.userId) {
+            return res.status(403).json({ message: "Only the owner can modify this post" });
+        }
+
         const updatedPost = await prisma.post.update({
+            select: postFields,
             where: {
+                authorId: res.locals.userId,
                 id
             },
             data: {
@@ -128,9 +139,11 @@ router.patch("/:id", async (req, res) => {
     }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
+    const userId = res.locals.userId;
+    if (userId === undefined) return res.status(401).json({ message: "Authentication required" });
     try {
-        const { title, content } = req.body;
+        const { title, content } = req.body ?? {};
 
         if (
             typeof title !== "string" ||
@@ -144,9 +157,11 @@ router.post("/", async (req, res) => {
         }
 
         const post = await prisma.post.create({
+            select: postFields,
             data: {
                 title: title.trim(),
-                content: content.trim()
+                content: content.trim(),
+                authorId: userId
             }
         });
 
@@ -160,11 +175,11 @@ router.post("/", async (req, res) => {
     }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAuth, async (req, res) => {
     try {
         const id = Number(req.params.id);
 
-        if (!Number.isInteger(id) || id <= 0) {
+        if (!Number.isSafeInteger(id) || id <= 0 || id > 2147483647) {
             return res.status(400).json({
                 message: "Invalid post id"
             });
@@ -182,8 +197,13 @@ router.delete("/:id", async (req, res) => {
             });
         }
 
+        if (existingPost.authorId !== res.locals.userId) {
+            return res.status(403).json({ message: "Only the owner can delete this post" });
+        }
+
         await prisma.post.delete({
             where: {
+                authorId: res.locals.userId,
                 id
             }
         });

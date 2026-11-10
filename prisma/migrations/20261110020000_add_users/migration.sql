@@ -1,0 +1,12 @@
+CREATE TABLE "User" (
+ "id" SERIAL NOT NULL PRIMARY KEY,
+ "name" TEXT NOT NULL,
+ "email" TEXT NOT NULL,
+ "passwordHash" TEXT NOT NULL,
+ "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ "updatedAt" TIMESTAMP(3) NOT NULL
+);
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+ALTER TABLE "Post" ADD COLUMN "authorId" INTEGER;
+CREATE INDEX "Post_authorId_idx" ON "Post"("authorId");
+ALTER TABLE "Post" ADD CONSTRAINT "Post_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
