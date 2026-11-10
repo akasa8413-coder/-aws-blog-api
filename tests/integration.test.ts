@@ -99,11 +99,24 @@ test('migrations and authentication API against isolated PostgreSQL', async (t) 
             assert.equal((await prisma.post.findUniqueOrThrow({ where: { id: postId } })).authorId, ownerId);
             assert.equal((await request('POST', '/api/posts', null, ownerToken)).status, 400);
         });
-        await t.test('public reads retain current behavior including unpublished posts', async () => {
+        await t.test('public reads hide drafts while authenticated owners can access them', async () => {
             const list = await request('GET', '/api/posts');
             assert.equal(list.status, 200);
-            assert.equal((await list.json()).length, 1);
-            assert.equal((await request('GET', `/api/posts/${postId}`)).status, 200);
+            assert.equal((await list.json()).length, 0);
+            assert.equal((await request('GET', `/api/posts/${postId}`)).status, 404);
+            assert.equal((await request('GET', '/api/posts', undefined, ownerToken)).status, 200);
+            assert.equal((await request('GET', '/api/me/posts')).status, 401);
+            const mine = await request('GET', '/api/me/posts', undefined, ownerToken);
+            assert.equal(mine.status, 200);
+            assert.equal((await mine.json()).length, 1);
+            assert.equal((await request('GET', `/api/me/posts/${postId}`, undefined, ownerToken)).status, 200);
+            assert.equal((await request('GET', `/api/me/posts/${postId}`, undefined, otherToken)).status, 404);
+            assert.equal((await (await request('GET', '/api/me/posts', undefined, otherToken)).json()).length, 0);
+            const me = await request('GET', '/api/auth/me', undefined, ownerToken);
+            assert.equal(me.status, 200);
+            const profile = (await me.json()).user;
+            assert.equal(profile.id, ownerId);
+            assert.equal('passwordHash' in profile, false);
             assert.equal((await request('GET', '/api/posts/2147483648')).status, 400);
             assert.equal((await request('GET', '/api/posts/99999')).status, 404);
         });
@@ -115,13 +128,18 @@ test('migrations and authentication API against isolated PostgreSQL', async (t) 
             const updated = await request('PATCH', `/api/posts/${postId}`, { title: 'New', published: true, authorId: ownerId + 1 }, ownerToken);
             assert.equal(updated.status, 200);
             assert.equal((await updated.json()).published, true);
+            assert.equal((await request('GET', `/api/posts/${postId}`)).status, 200);
+            assert.equal((await (await request('GET', '/api/posts')).json()).length, 1);
+            await request('PATCH', `/api/posts/${postId}`, { published: false }, ownerToken);
+            assert.equal((await request('GET', `/api/posts/${postId}`)).status, 404);
+            assert.equal((await (await request('GET', '/api/posts')).json()).length, 0);
             assert.equal((await prisma.post.findUniqueOrThrow({ where: { id: postId } })).authorId, ownerId);
             assert.equal((await request('PATCH', '/api/posts/99999', { title: 'Missing' }, ownerToken)).status, 404);
             assert.equal((await request('DELETE', `/api/posts/${postId}`, undefined, ownerToken)).status, 204);
             assert.equal((await request('GET', `/api/posts/${postId}`)).status, 404);
         });
         await t.test('legacy posts remain readable but cannot be claimed or modified', async () => {
-            const legacy = await prisma.post.create({ data: { title: 'Legacy', content: 'Kept' } });
+            const legacy = await prisma.post.create({ data: { title: 'Legacy', content: 'Kept', published: true } });
             assert.equal((await request('GET', `/api/posts/${legacy.id}`)).status, 200);
             assert.equal((await request('PATCH', `/api/posts/${legacy.id}`, { title: 'Claim', authorId: ownerId }, ownerToken)).status, 403);
             assert.equal((await request('DELETE', `/api/posts/${legacy.id}`, undefined, ownerToken)).status, 403);
@@ -136,6 +154,16 @@ test('migrations and authentication API against isolated PostgreSQL', async (t) 
             await assert.rejects(prisma.post.create({ data: { title: 'Bad', content: 'Bad', authorId: 2147483647 } }));
             await prisma.post.create({ data: { title: 'Owned', content: 'Kept', authorId: ownerId } });
             await assert.rejects(prisma.user.delete({ where: { id: ownerId } }));
+        });
+        await t.test('serves the blog with security headers and compiled assets', async () => {
+            const response = await request('GET', '/');
+            assert.equal(response.status, 200);
+            assert.match(response.headers.get('content-type') ?? '', /text\/html/);
+            assert.match(response.headers.get('content-security-policy') ?? '', /script-src 'self'/);
+            assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+            assert.match(await response.text(), /余白/);
+            assert.equal((await request('GET', '/assets/app.js')).status, 200);
+            assert.equal((await request('GET', '/assets/style.css')).status, 200);
         });
         await t.test('authentication throttles excessive attempts', async () => {
             let limited: Response | undefined;

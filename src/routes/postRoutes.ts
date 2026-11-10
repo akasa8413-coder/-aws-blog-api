@@ -9,7 +9,7 @@ const postFields = { id: true, title: true, content: true, published: true, crea
 
 router.get("/", async (req, res) => {
     try {
-        const posts = await prisma.post.findMany({ select: postFields });
+        const posts = await prisma.post.findMany({ where: { published: true }, select: postFields, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] });
 
         return res.json(posts);
     } catch (error) {
@@ -31,9 +31,10 @@ router.get("/:id", async (req, res) => {
             });
         }
 
-        const post = await prisma.post.findUnique({
+        const post = await prisma.post.findFirst({
             select: postFields,
             where: {
+                published: true,
                 id
             }
         });
